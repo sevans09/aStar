@@ -1,0 +1,14 @@
+1. The algorithm looks for the most optimal flips each time. A graph is generated
+based on the starting state, and each node represents a different "world 
+configuration" or state of the problem. 
+
+2. Backward cost can be defined as flips made so far on the stack of pancakes.
+
+3. Forward cost is defined in "Landmark Heuristics for the Pancake Problem" as the
+number of positions in each configurationfor which the pancake at that 
+position is not within 1 size unit of the pancakes adjacent to it.
+
+UCS could be used for this problem. See UCS.py for the implementation.
+The only difference was that UCS does not use both forward and backward cost, 
+only forward cost. This was reflected in the heuristic function and the rest
+of the program.
