@@ -77,11 +77,16 @@ def checkChildren(curr, visited, cost, graph, frontier):
 		graph.add_edge(curr, potentialFlip)
 
 		potentialFlipCost = potentialFlip.total
-		if potentialFlip not in cost or potentialFlipCost < cost[potentialFlip]:
+		# check if a better path was found
+
+		if potentialFlipCost < cost[potentialFlip]:
+			cost[potentialFlip] = potentialFlipCost
+			frontier.insert(potentialFlip, potentialFlip.total)
+			visited[potentialFlip] = curr	
+		elif potentialFlip not in cost:
 			cost[potentialFlip] = potentialFlipCost
 			frontier.insert(potentialFlip, potentialFlip.total)
 			visited[potentialFlip] = curr
-		
 
 def main():
 	originalStack = [5,3,4,1,2]
@@ -139,7 +144,6 @@ def main():
 
 
 	print("Sorting finished.")
-
 
 
 if __name__== "__main__":
