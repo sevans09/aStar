@@ -34,10 +34,6 @@ class Stack:
 			print("Total cost was", self.total,"\n")
 			exit()
 
-	# iterates cost after a flip
-	def nextPancakeCost(self):
-		self.backwardCost = self.backwardCost + 1
-
 	# checks if the pancakes are in the goal state
 	def isSolution(self):
 		for x in range(self.numPancakes - 1):
@@ -53,14 +49,17 @@ class Stack:
 class PriorityQueue:   
     def __init__(self): 
         self.queue = [] 
+        self.len = 0
 
     # inserts an element into queue
     def insert(self, data, prio): 
         heapq.heappush(self.queue, (prio, data))
+        self.len += 1
   
     # pops an element based on priority
     def pop(self): 
         try: 
+        	self.len -= 1
         	return heapq.heappop(self.queue)[1]
         except IndexError: 
             exit() 
@@ -69,32 +68,47 @@ class PriorityQueue:
     def isEmpty(self): 
        return len(self.queue) == []
 
-def checkChildren(curr, visited, cost, frontier):
+def checkChildren(curr, visited, frontier, currPathCost):
 	index = 0
 	for pancake in range(curr.numPancakes):
-		time.sleep(2)
+		#time.sleep(2)
 		potentialFlip = copy.deepcopy(curr)
-		potentialFlip.nextPancakeCost()
+		potentialFlip.backwardCost = potentialFlip.backwardCost + 1
 		potentialFlip.flipStack(pancake)
 
-		potentialFlipTotal = potentialFlip.total
-		potentialFlipForward = potentialFlip.forwardCost
+		potentialFlipForward = potentialFlip.calculateForwardCost()
 		potentialFlipBack = potentialFlip.backwardCost
+		potentialFlipTotal = potentialFlipBack + potentialFlipForward
 
-		# check if a better path was found
-		if potentialFlip not in cost or potentialFlipCost < cost[potentialFlip]:
-			cost[potentialFlip] = potentialFlipTotal
+		childInFrontier = False
+		for i in range(frontier.len):
+			if frontier.queue[i] == potentialFlip:
+				print("Found")
+				childInFrontier = True
+
+		if childInFrontier == False and potentialFlip not in visited:
+			print("in if")
+			currPathCost = potentialFlipTotal
 			print("Flip at ", index, "has a forward cost of", potentialFlipForward)
 			print("Total cost is", potentialFlipTotal)
-			frontier.insert(potentialFlip, potentialFlip.total)
-			visited[potentialFlip] = curr
+			frontier.insert(potentialFlip, potentialFlipTotal)
+			visited.append(potentialFlip)
+		
+		elif potentialFlip in frontier and frontier[potentialFlip].calculateForwardCost() > potentialFlipTotal:
+			print("here")
+
 		index += 1
 		
 
 def main():
 	originalStack = [5,4,3,1,2]
 
+	# works for this
 	originalStack = [5,2,1,4,3]
+
+	originalStack = [1,2,3,5,4]
+
+	originalStack = [1,3,2,4]
 
 	goalState = copy.deepcopy(originalStack)
 	goalState.sort(reverse=True)
@@ -110,20 +124,16 @@ def main():
 		stackState += str(stack.pancakeStack[i]) + " "
 	print(stackState)
 
-	# cost and path arrays
-	cost = {}
-	visited = {}
+	# visited arrays
 	length = stack.numPancakes
-
-	for i in range(length):
-		visited[i] = None
-	for i in range(length):
-		cost[i] = 0
+	visited = [None] * length
 
 	while (frontier.isEmpty() == False):
 		curr = frontier.pop()
+		print("Frontier is", frontier.queue)
 		time.sleep(1)
-		checkChildren(curr, visited, cost, frontier)
+		currPathCost = 100
+		checkChildren(curr, visited, frontier, currPathCost)
 
 
 if __name__== "__main__":
