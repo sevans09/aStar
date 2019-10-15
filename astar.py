@@ -1,13 +1,13 @@
 import heapq, copy, time
-import networkx as nx
 
 class Stack:
-	def __init__(self, stack, backwardCost): 
+	def __init__(self, stack, backwardCost, goalState): 
 		self.pancakeStack = stack
-		self.numPancakes = len(stack) - 1
+		self.numPancakes = len(stack) 
 		self.backwardCost = backwardCost
 		self.forwardCost = self.calculateForwardCost()
 		self.total = self.forwardCost + self.backwardCost
+		self.goalState = goalState
 
 	# prints stack state
 	def print(self):
@@ -19,7 +19,7 @@ class Stack:
 	# forward cost based on the gap heuristic
 	def calculateForwardCost(self):
 		forwardCost = 0
-		for idx in range(self.numPancakes):
+		for idx in range(self.numPancakes - 1):
 			gap = self.pancakeStack[idx] - self.pancakeStack[idx + 1]
 			if gap < -1 or gap > 1:
 				forwardCost += 1
@@ -27,8 +27,12 @@ class Stack:
 
 	# flips stack at pancake
 	def flipStack(self, index):
-		self.pancakeStack[index:5] = reversed(self.pancakeStack[index:5])
+		self.pancakeStack[index:self.numPancakes] = reversed(self.pancakeStack[index:self.numPancakes])
 		print("Pancake stack is ", self.pancakeStack, "after flipping pancake at ", index)
+		if self.pancakeStack == self.goalState:
+			print("\nReached goal state.")
+			print("Total cost was", self.total,"\n")
+			exit()
 
 	# iterates cost after a flip
 	def nextPancakeCost(self):
@@ -36,7 +40,7 @@ class Stack:
 
 	# checks if the pancakes are in the goal state
 	def isSolution(self):
-		for x in range(self.numPancakes):
+		for x in range(self.numPancakes - 1):
 			if(self.pancakeStack[x] > self.pancakeStack[x+1]):
 				return False
 		return True
@@ -65,85 +69,61 @@ class PriorityQueue:
     def isEmpty(self): 
        return len(self.queue) == []
 
-def checkChildren(curr, visited, cost, graph, frontier):
+def checkChildren(curr, visited, cost, frontier):
+	index = 0
 	for pancake in range(curr.numPancakes):
 		time.sleep(2)
 		potentialFlip = copy.deepcopy(curr)
 		potentialFlip.nextPancakeCost()
-		potentialFlip.flipStack(pancake+1)
-		if(potentialFlip in visited):
-			continue
-		graph.add_node(potentialFlip)
-		graph.add_edge(curr, potentialFlip)
+		potentialFlip.flipStack(pancake)
 
-		potentialFlipCost = potentialFlip.total
+		potentialFlipTotal = potentialFlip.total
+		potentialFlipForward = potentialFlip.forwardCost
+		potentialFlipBack = potentialFlip.backwardCost
+
 		# check if a better path was found
-
-		if potentialFlipCost < cost[potentialFlip]:
-			cost[potentialFlip] = potentialFlipCost
-			frontier.insert(potentialFlip, potentialFlip.total)
-			visited[potentialFlip] = curr	
-		elif potentialFlip not in cost:
-			cost[potentialFlip] = potentialFlipCost
+		if potentialFlip not in cost or potentialFlipCost < cost[potentialFlip]:
+			cost[potentialFlip] = potentialFlipTotal
+			print("Flip at ", index, "has a forward cost of", potentialFlipForward)
+			print("Total cost is", potentialFlipTotal)
 			frontier.insert(potentialFlip, potentialFlip.total)
 			visited[potentialFlip] = curr
+		index += 1
+		
 
 def main():
-	originalStack = [5,3,4,1,2]
-	# originalStack = []
-	# size = int(input("How many pancakes? "))
-	# for i in range(0, size):
-	# 	print("Pancake", i)
-	# 	originalStack.append(int(input("Enter pancake's size: ")))
+	originalStack = [5,4,3,1,2]
+
+	originalStack = [5,2,1,4,3]
 
 	goalState = copy.deepcopy(originalStack)
 	goalState.sort(reverse=True)
 	print("Beginning A star on the stack, goal state is", goalState, "\n")
 
-	stack = Stack(originalStack, 0)
+	stack = Stack(originalStack, 0, goalState)
 	frontier = PriorityQueue()
 	frontier.insert(stack, stack.total)
 
 	# print stack
-	stackState = "Stack: "
+	stackState = "Original stack: "
 	for i in range(stack.numPancakes):
 		stackState += str(stack.pancakeStack[i]) + " "
 	print(stackState)
 
 	# cost and path arrays
-	visited = {}
 	cost = {}
-	for i in range(stack.numPancakes):
-		visited[i] = None
-	for i in range(stack.numPancakes):
-		cost[i] = 0
+	visited = {}
+	length = stack.numPancakes
 
-	graph = nx.Graph()
-	graph.add_node(stack)
+	for i in range(length):
+		visited[i] = None
+	for i in range(length):
+		cost[i] = 0
 
 	while (frontier.isEmpty() == False):
 		curr = frontier.pop()
-		time.sleep(2)
-
-		if (curr.isSolution() == True):
-			cost = curr.backwardCost
-			path = [curr]
-			print("Initialized path to", curr)
-			while curr in visited:
-				curr = visited[curr]
-				if curr == None:
-					break
-				print("Adding", curr, "to the path.")
-
-
-		if stack == goalState:
-			print("Reached goal state.")
-			exit()
-
-		checkChildren(curr, visited, cost, graph, frontier)
-
-
-	print("Sorting finished.")
+		time.sleep(1)
+		checkChildren(curr, visited, cost, frontier)
 
 
 if __name__== "__main__":
