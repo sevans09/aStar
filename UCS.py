@@ -1,19 +1,16 @@
 import heapq, copy, time
 
 class Stack:
-    def __init__(self, stack, goalState): 
+    def __init__(self, stack, backwardCost, goalState): 
         self.pancakeStack = stack
         self.numPancakes = len(stack) 
         self.forwardCost = self.calculateForwardCost()
         self.goalState = goalState
 
-    # prints stack state
-    def print(self):
-        stackState = "Stack: "
-        for i in range((self.numPancakes)):
-            stackState += str(self.pancakeStack[i]) + " "
-        print(stackState)
-
+    # less than operator overload
+    def __lt__(self, other):
+        return self.forwardCost < other.forwardCost
+        
     # forward cost based on the gap heuristic
     def calculateForwardCost(self):
         forwardCost = 0
@@ -28,33 +25,24 @@ class Stack:
         self.pancakeStack[index:self.numPancakes] = reversed(self.pancakeStack[index:self.numPancakes])
         print("Pancake stack is ", self.pancakeStack, "after flipping pancake at ", index)
         if self.pancakeStack == self.goalState:
-            print("\nReached goal state.")
-            print("Cost was", self.forwardCost)
+            print("\nReached goal state", self.pancakeStack)
             exit()
-
-    # checks if the pancakes are in the goal state
-    def isSolution(self):
-        for x in range(self.numPancakes - 1):
-            if(self.pancakeStack[x] > self.pancakeStack[x+1]):
-                return False
-        return True
-
-    # less than operator overload
-    def __lt__(self, other):
-        return self.forwardCost < other.forwardCost
 
 
 class PriorityQueue:   
     def __init__(self): 
         self.queue = [] 
+        self.len = 0
 
     # inserts an element into queue
     def insert(self, data, prio): 
         heapq.heappush(self.queue, (prio, data))
+        self.len += 1
   
     # pops an element based on priority
     def pop(self): 
         try: 
+            self.len -= 1
             return heapq.heappop(self.queue)[1]
         except IndexError: 
             exit() 
@@ -63,70 +51,60 @@ class PriorityQueue:
     def isEmpty(self): 
        return len(self.queue) == []
 
-def checkChildren(curr, visited, cost, frontier):
-    index = 0
+def checkChildren(curr, visited, frontier):
+    pancakeIndex = 0
 
+    # check each possible configuration of current stack
     for pancake in range(curr.numPancakes):
-        time.sleep(2)
-
-        # increment backward cost and check flipped stack
+        time.sleep(1)
         potentialFlip = copy.deepcopy(curr)
+
+        # after stack is flipped at given pancake's index, goal reached
+        # is checked in flipStack function
         potentialFlip.flipStack(pancake)
 
-        # get costs at this configuration
-        potentialFlipForward = potentialFlip.forwardCost
+        # get costs for this configuration
+        potentialFlipForward = potentialFlip.calculateForwardCost()
 
-        # check if this flip is not in the cost array
-        if potentialFlip not in cost :
-            cost[potentialFlip] = potentialFlipForward
-            print("Flip at ", index, "has a forward cost of", potentialFlipForward)
-            print("Forward cost is", potentialFlipForward)
-            frontier.insert(potentialFlip, potentialFlip.forwardCost)
-            visited[potentialFlip] = curr
+        # ensure child (potential flip) is not in frontier or visited
+        childInFrontier = False
+        for i in range(frontier.len):
+            if frontier.queue[i] == potentialFlip:
+                childInFrontier = True
 
-        # check if a better path was found
-        elif potentialFlipCost < cost[potentialFlip]:
-            cost[potentialFlip] = potentialFlipForward
-            print("Flip at ", index, "has a forward cost of", potentialFlipForward)
-            print("Forward cost is", potentialFlipForward)
-            print("This cost is less than previous path's.")
-            frontier.insert(potentialFlip, potentialFlip.forwardCost)
-            visited[potentialFlip] = curr
+        if childInFrontier == False and potentialFlip not in visited:
+            visited.append(potentialFlip)
+            frontier.insert(potentialFlip, potentialFlipForward)
+            print("\nFlip at ", pancakeIndex, "has a forward cost of", potentialFlipForward)
 
-        index += 1
+
+        # increment index to keep track of which pancake is being flipped
+        pancakeIndex += 1
         
 
 def main():
-    originalStack = [5,4,3,1,2]
+    print("Enter numbers separated by spaces: ")
+    originalStack = list(map(int, input().split()))
 
+    # getting goal state to reach
     goalState = copy.deepcopy(originalStack)
     goalState.sort(reverse=True)
-    print("Beginning A star on the stack, goal state is", goalState, "\n")
+    print("Beginning UCS on the stack, goal state is", goalState, "\n")
 
-    stack = Stack(originalStack, goalState)
+    # initializing frontier
     frontier = PriorityQueue()
+    stack = Stack(originalStack, 0, goalState)
     frontier.insert(stack, stack.forwardCost)
 
-    # print stack
-    stackState = "Original stack: "
-    for i in range(stack.numPancakes):
-        stackState += str(stack.pancakeStack[i]) + " "
-    print(stackState)
+    print ("\nOriginal stack is: ", originalStack, "\n")
 
-    # cost and path arrays
-    cost = {}
-    visited = {}
+    # visited array
     length = stack.numPancakes
-
-    for i in range(length):
-        visited[i] = None
-    for i in range(length):
-        cost[i] = 0
+    visited = [None] * length
 
     while (frontier.isEmpty() == False):
         curr = frontier.pop()
-        time.sleep(1)
-        checkChildren(curr, visited, cost, frontier)
+        checkChildren(curr, visited, frontier)
 
 
 if __name__== "__main__":
