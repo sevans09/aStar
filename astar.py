@@ -9,12 +9,9 @@ class Stack:
 		self.total = self.forwardCost + self.backwardCost
 		self.goalState = goalState
 
-	# prints stack state
-	def print(self):
-		stackState = "Stack: "
-		for i in range((self.numPancakes)):
-			stackState += str(self.pancakeStack[i]) + " "
-		print(stackState)
+	# less than operator overload
+	def __lt__(self, other):
+		return self.total < other.total
 
 	# forward cost based on the gap heuristic
 	def calculateForwardCost(self):
@@ -27,23 +24,17 @@ class Stack:
 
 	# flips stack at pancake
 	def flipStack(self, index):
+		self.backwardCost += 1
 		self.pancakeStack[index:self.numPancakes] = reversed(self.pancakeStack[index:self.numPancakes])
 		print("Pancake stack is ", self.pancakeStack, "after flipping pancake at ", index)
+		
 		if self.pancakeStack == self.goalState:
-			print("\nReached goal state.")
-			print("Total cost was", self.total,"\n")
+			print("\nReached goal state", self.pancakeStack)
+			flipForward = self.calculateForwardCost()
+			flipBack = self.backwardCost
+			flipTotal = flipBack + flipForward
+			print("Total cost was", flipTotal, "\n")
 			exit()
-
-	# checks if the pancakes are in the goal state
-	def isSolution(self):
-		for x in range(self.numPancakes - 1):
-			if(self.pancakeStack[x] > self.pancakeStack[x+1]):
-				return False
-		return True
-
-	# less than operator overload
-	def __lt__(self, other):
-		return self.total < other.total
 
 
 class PriorityQueue:   
@@ -68,61 +59,57 @@ class PriorityQueue:
     def isEmpty(self): 
        return len(self.queue) == []
 
-def checkChildren(curr, visited, frontier, currPathCost):
-	index = 0
+def checkChildren(curr, visited, frontier):
+	pancakeIndex = 0
+
+	# check each possible configuration of current stack
 	for pancake in range(curr.numPancakes):
-		#time.sleep(2)
+		time.sleep(1)
 		potentialFlip = copy.deepcopy(curr)
+
+		# increment backward cost
 		potentialFlip.backwardCost = potentialFlip.backwardCost + 1
+
+        # after stack is flipped at given pancake's index, goal reached
+        # is checked in flipStack function
 		potentialFlip.flipStack(pancake)
 
+        # get costs for this configuration
 		potentialFlipForward = potentialFlip.calculateForwardCost()
 		potentialFlipBack = potentialFlip.backwardCost
 		potentialFlipTotal = potentialFlipBack + potentialFlipForward
 
+		# ensure child (potential flip) is not in frontier or visited
 		childInFrontier = False
 		for i in range(frontier.len):
 			if frontier.queue[i] == potentialFlip:
-				print("Found")
 				childInFrontier = True
 
 		if childInFrontier == False and potentialFlip not in visited:
-			print("in if")
-			currPathCost = potentialFlipTotal
-			print("Flip at ", index, "has a forward cost of", potentialFlipForward)
-			print("Total cost is", potentialFlipTotal)
-			frontier.insert(potentialFlip, potentialFlipTotal)
 			visited.append(potentialFlip)
-		
-		elif potentialFlip in frontier and frontier[potentialFlip].calculateForwardCost() > potentialFlipTotal:
-			print("here")
+			frontier.insert(potentialFlip, potentialFlipTotal)
+			print("Flip at ", pancakeIndex, "has a forward cost of", potentialFlipForward)
+			print("Total cost is ", potentialFlipTotal, "\n")
 
-		index += 1
+		# increment index to keep track of which pancake is being flipped
+		pancakeIndex += 1
 		
 
 def main():
-	originalStack = [5,4,3,1,2]
+	print("Enter numbers separated by spaces: ")
+	originalStack = list(map(int, input().split()))
 
-	# works for this
-	originalStack = [5,2,1,4,3]
-
-	originalStack = [1,2,3,5,4]
-
-	originalStack = [1,3,2,4]
-
+	# getting goal state to reach
 	goalState = copy.deepcopy(originalStack)
 	goalState.sort(reverse=True)
-	print("Beginning A star on the stack, goal state is", goalState, "\n")
+	print("\nBeginning A star on the stack, goal state is", goalState, "\n")
 
-	stack = Stack(originalStack, 0, goalState)
+	# initializing frontier
 	frontier = PriorityQueue()
+	stack = Stack(originalStack, 0, goalState)
 	frontier.insert(stack, stack.total)
 
-	# print stack
-	stackState = "Original stack: "
-	for i in range(stack.numPancakes):
-		stackState += str(stack.pancakeStack[i]) + " "
-	print(stackState)
+	print ("\nOriginal stack is: ", originalStack, "\n")
 
 	# visited arrays
 	length = stack.numPancakes
@@ -130,10 +117,7 @@ def main():
 
 	while (frontier.isEmpty() == False):
 		curr = frontier.pop()
-		print("Frontier is", frontier.queue)
-		time.sleep(1)
-		currPathCost = 100
-		checkChildren(curr, visited, frontier, currPathCost)
+		checkChildren(curr, visited, frontier)
 
 
 if __name__== "__main__":
